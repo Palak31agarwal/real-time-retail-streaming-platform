@@ -1,6 +1,7 @@
 # Real-time Retail Streaming Platform
 
-![Uploading 5b59d942-2283-471d-ad68-489f21ad0971.png…]()
+<img width="1547" height="1017" alt="5b59d942-2283-471d-ad68-489f21ad0971" src="https://github.com/user-attachments/assets/a7994365-00d8-4768-94cb-eda1530fd29c" />
+
 
 
 Scalable real-time retail streaming platform for event processing,
