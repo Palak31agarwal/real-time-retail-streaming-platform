@@ -68,11 +68,6 @@ analytics, attribution, and insights APIs.
   **GitHub Actions**                  CI/CD automation
   -----------------------------------------------------------------------
 
-> Production concerns such as Prometheus/Grafana, multi-region
-> deployment and automated CI/CD may be architectural considerations
-> even when not fully implemented in the local demo.
-
-------------------------------------------------------------------------
 
 ## 2. Functional Requirements
 
