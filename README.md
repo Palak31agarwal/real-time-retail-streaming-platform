@@ -24,7 +24,6 @@ analytics, attribution, and insights APIs.
 15. [Trade-offs & Design Decisions](#trade-offs--design-decisions)
 16. [Project Structure](#project-structure)
 17. [Running Locally](#running-locally)
-18. [Future Enhancements](#future-enhancements)
 
 ------------------------------------------------------------------------
 
@@ -820,57 +819,3 @@ mvn test
 ```
 
 ------------------------------------------------------------------------
-
-## 18. Future Enhancements
-
--   Historical query routing through a data warehouse
--   Data lake integration
--   Multi-region active-active deployment
--   Advanced attribution models
--   Schema Registry and automated schema compatibility checks
--   Automated load testing
--   Distributed tracing
--   Advanced tenant-level quotas
--   Autoscaling based on Kafka consumer lag
--   Data retention and tiered storage
--   Real-time anomaly detection
-
-------------------------------------------------------------------------
-
-## Summary
-
-The platform provides a scalable event-driven architecture for real-time
-retail and advertising analytics.
-
-``` text
-Events
-  |
-  v
-API Gateway
-  |
-  v
-Event Collector
-  |
-  v
-Kafka
-  |
-  v
-Kafka Streams
-  |
-  +--> Stateful Processing / RocksDB
-  |
-  v
-Amazon DynamoDB
-  |
-  v
-Insights APIs
-  |
-  v
-Real-time Analytics
-```
-
-**Core design principle:**
-
-> Capture events once, process them continuously, maintain state where
-> required, pre-aggregate metrics, and expose low-latency insights
-> through APIs.
