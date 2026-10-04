@@ -2,8 +2,6 @@
 
 <img width="1547" height="1017" alt="5b59d942-2283-471d-ad68-489f21ad0971" src="https://github.com/user-attachments/assets/a7994365-00d8-4768-94cb-eda1530fd29c" />
 
-
-
 Scalable real-time retail streaming platform for event processing,
 analytics, attribution, and insights APIs.
 
@@ -18,14 +16,15 @@ analytics, attribution, and insights APIs.
 7.  [State Management](#state-management)
 8.  [Ad Attribution](#ad-attribution)
 9.  [Data Storage](#data-storage)
-10. [Insights APIs](#insights-apis)
-11. [Scalability & Resilience](#scalability--resilience)
-12. [Security](#security)
-13. [Observability & Monitoring](#observability--monitoring)
-14. [Trade-offs & Design Decisions](#trade-offs--design-decisions)
-15. [Project Structure](#project-structure)
-16. [Running Locally](#running-locally)
-17. [Future Enhancements](#future-enhancements)
+10. [AWS Deployment Architecture](#aws-deployment-architecture)
+11. [Insights APIs](#insights-apis)
+12. [Scalability & Resilience](#scalability--resilience)
+13. [Security](#security)
+14. [Observability & Monitoring](#observability--monitoring)
+15. [Trade-offs & Design Decisions](#trade-offs--design-decisions)
+16. [Project Structure](#project-structure)
+17. [Running Locally](#running-locally)
+18. [Future Enhancements](#future-enhancements)
 
 ------------------------------------------------------------------------
 
@@ -47,7 +46,7 @@ analytics, attribution, and insights APIs.
   **RocksDB**                         Local persistent state store used
                                       by Kafka Streams
 
-  **Apache Cassandra**                Horizontally scalable, low-latency
+  **Amazon DynamoDB**                Managed, highly scalable, low-latency
                                       serving database
 
   **Docker**                          Containerization
@@ -269,7 +268,7 @@ Web / Mobile Applications
           +---- Ad Attribution
           |
           v
-       Cassandra
+Amazon DynamoDB
       Serving DB
           |
           v
@@ -446,7 +445,7 @@ out-of-order events.
 
 ### Serving Database
 
-Cassandra is used for predictable, low-latency access patterns.
+**Amazon DynamoDB** is used as the low-latency serving store for predictable, key-based access patterns.
 
 Example logical record:
 
@@ -465,7 +464,112 @@ raw event stream for every request.
 
 ------------------------------------------------------------------------
 
-## 10. Insights APIs
+## 10. AWS Deployment Architecture
+
+The production deployment targets AWS and uses managed services where they reduce operational overhead.
+
+```text
+                    AWS
++-------------------------------------------------------------+
+|                                                             |
+|  Retailer Web / Mobile                                     |
+|          |                                                  |
+|          v                                                  |
+|   AWS WAF                                                   |
+|          |                                                  |
+|          v                                                  |
+|   Amazon API Gateway                                        |
+|          |                                                  |
+|          v                                                  |
+|   Event Collector (ECS / EKS)                              |
+|          |                                                  |
+|          v                                                  |
+|   Amazon MSK (Kafka)                                        |
+|          |                                                  |
+|          v                                                  |
+|   Kafka Streams (ECS / EKS)                                |
+|          |                         |                         |
+|          |                         +--> Amazon S3              |
+|          v                                                   |
+|   Amazon DynamoDB                                           |
+|          |                                                   |
+|          v                                                   |
+|   Insights API (ECS / EKS)                                 |
+|                                                             |
+|  IAM | KMS | CloudWatch | VPC | Secrets Manager             |
++-------------------------------------------------------------+
+```
+
+### AWS services
+
+| AWS Service | Responsibility |
+|---|---|
+| **Amazon API Gateway** | API entry point, routing, throttling and integration with authentication |
+| **AWS WAF** | Protection for public HTTP/API endpoints |
+| **Amazon MSK** | Managed Apache Kafka cluster for event streaming |
+| **Amazon ECS / EKS** | Runs Event Collector, Kafka Streams and Insights API workloads |
+| **Amazon DynamoDB** | Low-latency serving store for pre-aggregated campaign metrics |
+| **Amazon S3** | Durable raw-event storage, archival and replay source |
+| **Amazon CloudWatch** | Logs, metrics, alarms and operational monitoring |
+| **AWS IAM** | Service-to-service authentication and authorization |
+| **AWS KMS** | Encryption key management |
+| **AWS Secrets Manager** | Secure application secrets |
+| **Amazon VPC** | Network isolation and private connectivity |
+
+### Deployment model
+
+- Deploy application workloads across multiple Availability Zones.
+- Run Event Collector, Kafka Streams and Insights API as horizontally scalable services.
+- Use Amazon MSK with Kafka replication across Availability Zones.
+- Use DynamoDB as the managed serving layer.
+- Store raw events in S3 for durable retention, audit and replay.
+- Keep internal workloads in private subnets where appropriate.
+- Expose only required public endpoints through WAF and API Gateway.
+- Use IAM roles for service-to-service access instead of long-lived credentials.
+- Use CloudWatch for centralized logs, metrics and alarms.
+- Use Infrastructure as Code such as Terraform or AWS CDK for repeatable environments.
+- Maintain separate `dev`, `stage` and `prod` environments.
+
+### Deployment flow
+
+```text
+Internet
+   |
+   v
+AWS WAF
+   |
+   v
+API Gateway
+   |
+   +--> Event Collector (ECS/EKS)
+              |
+              v
+          Amazon MSK
+              |
+              v
+       Kafka Streams
+          |         |
+          |         +--> S3 Raw Events
+          |
+          v
+     DynamoDB
+          |
+          v
+     Insights API
+```
+
+### Resilience and disaster recovery
+
+- Multi-AZ application deployment
+- Kafka replication through Amazon MSK
+- DynamoDB managed availability
+- S3 durable raw-event storage
+- Kafka Streams state recovery through changelog topics
+- Autoscaling based on workload and Kafka consumer lag
+- Health checks and automatic replacement of unhealthy instances
+- Start with multi-AZ single-region deployment; introduce multi-region DR when business RPO/RTO requirements justify the additional cost and complexity.
+
+## 11. Insights APIs
 
 ### Get campaign clicks
 
@@ -500,7 +604,7 @@ request validation.
 
 ------------------------------------------------------------------------
 
-## 11. Scalability & Resilience
+## 12. Scalability & Resilience
 
 ### Kafka
 
@@ -547,7 +651,7 @@ and recovery without permanently losing events.
 
 ------------------------------------------------------------------------
 
-## 12. Security
+## 13. Security
 
 Security controls include:
 
@@ -568,7 +672,7 @@ consistently.
 
 ------------------------------------------------------------------------
 
-## 13. Observability & Monitoring
+## 14. Observability & Monitoring
 
 ### Platform metrics
 
@@ -577,7 +681,7 @@ consistently.
 -   Processing latency
 -   API latency
 -   API error rate
--   Cassandra read/write latency
+-   DynamoDB read/write latency
 -   CPU and memory utilization
 
 ### Business metrics
@@ -609,7 +713,7 @@ processing and persistence.
 
 ------------------------------------------------------------------------
 
-## 14. Trade-offs & Design Decisions
+## 15. Trade-offs & Design Decisions
 
 ### Kafka Streams vs Apache Flink
 
@@ -655,7 +759,7 @@ requirements.
 
 ------------------------------------------------------------------------
 
-## 15. Project Structure
+## 16. Project Structure
 
 ``` text
 real-time-retail-streaming-platform/
@@ -686,7 +790,7 @@ real-time-retail-streaming-platform/
 
 ------------------------------------------------------------------------
 
-## 16. Running Locally
+## 17. Running Locally
 
 Start the local infrastructure:
 
@@ -717,7 +821,7 @@ mvn test
 
 ------------------------------------------------------------------------
 
-## 17. Future Enhancements
+## 18. Future Enhancements
 
 -   Historical query routing through a data warehouse
 -   Data lake integration
@@ -756,7 +860,7 @@ Kafka Streams
   +--> Stateful Processing / RocksDB
   |
   v
-Cassandra
+Amazon DynamoDB
   |
   v
 Insights APIs
