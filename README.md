@@ -203,26 +203,29 @@ DynamoDB
 
 ```text
 real-time-retail-streaming-platform/
-│
 ├── README.md
-├── architecture/
-│   ├── hld.drawio
-│   └── architecture.md
-│
-├── src/
-│   ├── main/
-│   └── test/
-│
-├── api/
-│   └── openapi.yaml
-│
-├── docker/
-│   └── docker-compose.yml
-│
-├── pom.xml
-└── .github/
-    └── workflows/
+└── real-time-retail-streaming-platform/
+  ├── .gitignore
+  ├── pom.xml
+  ├── README.md
+  └── src/
+    ├── main/
+    │   ├── java/com/retail/streaming/
+    │   │   ├── RetailStreamingApplication.java
+    │   │   ├── controller/AdController.java
+    │   │   ├── model/
+    │   │   │   ├── AdCampaignMetrics.java
+    │   │   │   └── AdClicksResponse.java
+    │   │   ├── repository/AdCampaignMetricsRepository.java
+    │   │   └── service/AdService.java
+    │   └── resources/
+    │       ├── application.properties
+    │       └── data.sql
+    └── test/java/com/retail/streaming/service/
+      └── AdServiceTest.java
 ```
+
+The H2 database files are created under the application directory's `data/` folder at runtime and are excluded from version control.
 
 The Spring Boot application demonstrates:
 
@@ -240,28 +243,22 @@ Controller → Service → Repository
 
 ## 6. Running Locally
 
-Start the required infrastructure:
+The current Spring API uses an embedded, file-backed H2 database, so no Docker, Kafka, or external database is required for this local demo. Ensure Java 17 or newer and Maven are installed, then run these commands from the repository root:
 
-```bash
-docker compose up
-```
-
-Build the application:
-
-```bash
-mvn clean install
-```
-
-Run tests:
-
-```bash
-mvn test
-```
-
-Run the application:
-
-```bash
+```powershell
+winget install EclipseAdoptium.Temurin.17.JDK
+winget install Apache.Maven
+cd real-time-retail-streaming-platform
+java -version
+mvn -version
+mvn clean test
 mvn spring-boot:run
+```
+
+The app listens on port 8080 and persists local data in `real-time-retail-streaming-platform/data/retaildb.mv.db`. It seeds campaigns `C123` and `C456` on startup. Query a sample campaign from another terminal:
+
+```powershell
+curl.exe http://localhost:8080/ad/C123/clicks
 ```
 
 Example:
