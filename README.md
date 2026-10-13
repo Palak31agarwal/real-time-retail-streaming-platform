@@ -59,7 +59,6 @@ Calculate:
 - Clicks
 - CTR
 - Add-to-cart
-- Click-to-basket
 - Conversions
 
 Metrics can be aggregated by campaign, product, retailer and time window.
@@ -139,9 +138,6 @@ Web / Mobile Applications
           |
           v
      API Gateway
-          |
-          v
-    Event Collector
           |
           v
         Kafka
