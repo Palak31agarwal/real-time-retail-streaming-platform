@@ -171,7 +171,7 @@ Web / Mobile Applications
 
 1. Retailer applications generate user and advertising events.
 2. API Gateway provides authentication, routing and rate limiting.
-3. Event Collector validates, normalizes and enriches incoming events.
+3. API Gateway validates, normalizes and enriches incoming events.
 4. Kafka provides the durable event backbone.
 5. Raw events are archived from Kafka to Amazon S3, partitioned by tenant and date, for replay, audit and reprocessing.
 6. Kafka Streams performs stateful processing and aggregation.
@@ -183,7 +183,6 @@ Web / Mobile Applications
 - Every validated event is written to S3 in its original form (immutable, append-only), independent of downstream processing.
 - Objects are partitioned by tenant and date/hour (for example `s3://<bucket>/raw-events/tenant=<id>/dt=<yyyy-MM-dd>/hour=<HH>/`).
 - S3 is the source for replay and for reprocessing after business-logic changes; it complements Kafka retention, which only covers a short window.
-- Server-side encryption (SSE-KMS), bucket versioning and lifecycle rules (transition to colder storage classes, expiry per retention policy) apply.
 
 ### State Management
 
@@ -307,10 +306,10 @@ The production solution is designed for deployment on AWS.
                           |
         +-----------------+------------------+
         |                 |                  |
-   API Gateway         MSK / Kafka       DynamoDB
+   API Gateway          Kafka             DynamoDB
         |                 |                  |
         v                 v                  |
-   Event Collector → Kafka Streams ----------+
+      -------------- Kafka Streams ----------+
         |                 |
         +-------- ECS / EKS ---------------+
                           |
@@ -318,8 +317,8 @@ The production solution is designed for deployment on AWS.
 ```
 
 - **API Gateway** — API entry point, authentication and rate limiting
-- **MSK / Kafka** — managed event streaming
-- **ECS/EKS** — deploy Event Collector, Kafka Streams and Insights API
+- **Kafka** — managed event streaming
+- **ECS/EKS** — deploy Kafka Streams and Insights API
 - **DynamoDB** — scalable serving database
 - **S3** — durable raw event archive for replay, audit and retention
 - **Multi-AZ** — high availability and resilience
@@ -335,8 +334,6 @@ The platform follows an event-driven architecture:
 Events
   ↓
 API Gateway
-  ↓
-Event Collector
   ↓
 Kafka ──→ Amazon S3 (raw event archive)
   ↓
